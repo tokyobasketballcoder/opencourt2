@@ -201,9 +201,51 @@ const LeafletMap = ({ courts, onSelect, selectedId, lang }) => {
       });
       const m = L.marker([c.lat, c.lng], { icon }).addTo(map);
       m.on("click", () => onSelect(c));
+
+      const name = lang === "EN" ? c.name : c.nameJp;
+      const area = lang === "EN" ? c.area : c.areaJp;
+      const typeLabel = lang === "EN" ? c.type : (c.type === "Indoor" ? "屋内" : "屋外");
+      const crowdLabel = lang === "EN" ? c.crowd : (c.crowd === "High" ? "混雑" : c.crowd === "Medium" ? "普通" : "少ない");
+      const crowdC = c.crowd === "High" ? "#ff4444" : c.crowd === "Medium" ? "#ffaa00" : "#44dd44";
+      const bg = c.type === "Indoor"
+        ? "linear-gradient(135deg, #0a1a3a 0%, #0f2850 40%, #0a1628 100%)"
+        : "linear-gradient(135deg, #2a1500 0%, #3d2000 40%, #1a0a00 100%)";
+      const courtSvg = c.type === "Indoor"
+        ? `<svg width="120" height="60" viewBox="0 0 120 60" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="10" width="100" height="40" rx="2" fill="none" stroke="${col}44" stroke-width="1.5"/><line x1="60" y1="10" x2="60" y2="50" stroke="${col}44" stroke-width="1"/><circle cx="60" cy="30" r="10" fill="none" stroke="${col}44" stroke-width="1"/><rect x="10" y="18" width="15" height="24" rx="1" fill="none" stroke="${col}33" stroke-width="1"/><rect x="95" y="18" width="15" height="24" rx="1" fill="none" stroke="${col}33" stroke-width="1"/></svg>`
+        : `<svg width="120" height="60" viewBox="0 0 120 60" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="10" width="100" height="40" rx="2" fill="none" stroke="${col}44" stroke-width="1.5"/><line x1="60" y1="10" x2="60" y2="50" stroke="${col}44" stroke-width="1"/><circle cx="60" cy="30" r="10" fill="none" stroke="${col}44" stroke-width="1"/><rect x="10" y="18" width="15" height="24" rx="1" fill="none" stroke="${col}33" stroke-width="1"/><rect x="95" y="18" width="15" height="24" rx="1" fill="none" stroke="${col}33" stroke-width="1"/><circle cx="30" cy="5" r="12" fill="${col}08" stroke="none"/><circle cx="90" cy="55" r="8" fill="${col}06" stroke="none"/></svg>`;
+
+      const tooltipHtml = `
+        <div style="width:200px;overflow:hidden;border-radius:10px;background:#1a1a1a;border:1px solid #333;box-shadow:0 8px 32px rgba(0,0,0,.7);font-family:'Outfit',system-ui,sans-serif;">
+          <div style="height:70px;background:${bg};display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;">
+            ${courtSvg}
+            <div style="position:absolute;top:6px;right:6px;background:${col}25;color:${col};font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;letter-spacing:.5px;text-transform:uppercase;border:1px solid ${col}30;">${typeLabel}</div>
+          </div>
+          <div style="padding:10px 12px;">
+            <div style="font-size:12px;font-weight:700;color:#fff;line-height:1.3;margin-bottom:3px;">${name}</div>
+            <div style="font-size:10px;color:#777;margin-bottom:6px;">${area}</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div style="display:flex;align-items:center;gap:3px;">
+                <span style="color:#ff6b00;font-size:12px;font-weight:800;">${c.rating}</span>
+                <span style="color:#ff6b00;font-size:10px;">★</span>
+                <span style="color:#555;font-size:9px;margin-left:2px;">(${c.reviews.length})</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:4px;">
+                <div style="width:6px;height:6px;border-radius:50%;background:${crowdC};"></div>
+                <span style="color:${crowdC};font-size:9px;font-weight:600;">${crowdLabel}</span>
+              </div>
+            </div>
+          </div>
+        </div>`;
+
+      m.bindTooltip(tooltipHtml, {
+        direction: "top", offset: [0, -12], className: "ct-rich",
+        opacity: 1, permanent: false,
+      });
+
       if (sel) {
-        m.bindTooltip(lang === "EN" ? c.name : c.nameJp, {
-          permanent: true, direction: "top", offset: [0, -14], className: "ct",
+        m.bindTooltip(tooltipHtml, {
+          direction: "top", offset: [0, -12], className: "ct-rich",
+          opacity: 1, permanent: true,
         }).openTooltip();
       }
       markersRef.current.push(m);
@@ -224,7 +266,13 @@ const LeafletMap = ({ courts, onSelect, selectedId, lang }) => {
         <span style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#ff6b00", display: "inline-block" }} />{lang === "EN" ? "Outdoor" : "屋外"}</span>
         <span style={{ display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#4488ff", display: "inline-block" }} />{lang === "EN" ? "Indoor" : "屋内"}</span>
       </div>
-      <style>{`.ct{background:#1a1a1a!important;color:#fff!important;border:1px solid #444!important;border-radius:8px!important;padding:5px 12px!important;font-size:12px!important;font-weight:600!important;font-family:'Outfit',sans-serif!important;box-shadow:0 4px 20px rgba(0,0,0,.6)!important}.ct::before{border-top-color:#444!important}.leaflet-control-zoom a{background:#1a1a1a!important;color:#aaa!important;border-color:#333!important;font-weight:700!important}.leaflet-control-zoom a:hover{background:#333!important;color:#fff!important}`}</style>
+      <style>{`
+        .ct-rich{background:transparent!important;border:none!important;padding:0!important;box-shadow:none!important}
+        .ct-rich::before{display:none!important}
+        .leaflet-tooltip-top.ct-rich::before{display:none!important}
+        .leaflet-control-zoom a{background:#1a1a1a!important;color:#aaa!important;border-color:#333!important;font-weight:700!important}
+        .leaflet-control-zoom a:hover{background:#333!important;color:#fff!important}
+      `}</style>
     </div>
   );
 };
